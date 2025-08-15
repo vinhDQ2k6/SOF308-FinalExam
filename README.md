@@ -1,4 +1,4 @@
-# final-exam
+# SOF308-FinalExam
 
 ## Project setup
 ```
