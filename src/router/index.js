@@ -1,27 +1,36 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import AppLogin from '../views/AppLogin.vue'
 import TodoList from '../views/TodoList.vue'
 import AddTodo from '../views/AddTodo.vue'
-import AppLogin from '../views/AppLogin.vue'
+import { isAuthenticated, hasRole } from '../utils/auth.js'
+import AppHome from '@/views/AppHome.vue'
 
 const routes = [
-    { path: '/', redirect: '/login' },
-    { path: '/login', component: AppLogin },
-    { path: '/todos', component: TodoList, meta: { requiresAuth: true } },
-    { path: '/add', component: AddTodo, meta: { requiresAuth: true } },
+  { path: '/', component: AppHome },
+  { path: '/home', component: AppHome },
+  { path: '/login', component: AppLogin },
+  // User và Admin đều xem được
+  { path: '/todos', component: TodoList, meta: { requiresAuth: true, roles: ['admin', 'user'] } },
+  // Chỉ Admin mới được vào trang thêm
+  { path: '/add', component: AddTodo, meta: { requiresAuth: true, roles: ['admin'] } }
 ]
 
 const router = createRouter({
-    history: createWebHistory(process.env.BASE_URL),
-    routes,
+  history: createWebHistory(),
+  routes
 })
 
 router.beforeEach((to, from, next) => {
-    const isAuthenticated = !!localStorage.getItem('token')
-    if (to.meta.requiresAuth && !isAuthenticated) {
-        next('/login')
-    } else {
-        next()
-    }
+  const needAuth = !!to.meta.requiresAuth
+  if (needAuth && !isAuthenticated()) {
+    return next('/login')
+  }
+  const roles = to.meta.roles
+  if (roles && roles.length > 0 && !hasRole(roles)) {
+    // Không đủ quyền -> chuyển về danh sách
+    return next('/todos')
+  }
+  next()
 })
 
 export default router
